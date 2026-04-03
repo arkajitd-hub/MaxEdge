@@ -1,11 +1,11 @@
 from collections import Counter
 from typing import Optional
 
-from openai import OpenAI
+import requests
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .config import OPENAI_API_KEY, OPENAI_MODEL
+from .config import GEMINI_API_KEY, GEMINI_MODEL
 from .models import Athlete, Sponsor
 
 
@@ -64,21 +64,30 @@ def sponsor_fit_suggestions(db: Session, athlete_id: int) -> list[dict]:
 
 
 def ask_llm(question: str, context: str) -> Optional[str]:
-    if not OPENAI_API_KEY:
+    if not GEMINI_API_KEY:
         return None
 
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.responses.create(
-        model=OPENAI_MODEL,
-        input=[
-            {
-                "role": "system",
-                "content": "You are Max AI, an internal strategy assistant for a sports agency. Keep responses concise and actionable.",
-            },
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {question}",
-            },
-        ],
+    prompt = (
+        "You are Max AI, an internal strategy assistant for a sports agency. "
+        "Keep responses concise and actionable.\n\n"
+        f"Context:\n{context}\n\nQuestion: {question}"
     )
-    return response.output_text
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    )
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    try:
+        response = requests.post(url, json=payload, timeout=20)
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return None
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            return None
+        return parts[0].get("text")
+    except (requests.RequestException, ValueError, KeyError, IndexError):
+        return None
