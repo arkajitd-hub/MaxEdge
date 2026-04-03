@@ -7,7 +7,7 @@ Max AI is an internal-first AI assistant + analytics platform for a sports agenc
 - **Database:** PostgreSQL (SQLite fallback for local quickstart)
 - **ORM:** SQLAlchemy
 - **Migrations:** Alembic
-- **LLM API:** OpenAI (pluggable)
+- **LLM API:** Google Gemini (pluggable)
 - **Frontend:** Streamlit
 
 ## Features
@@ -32,7 +32,8 @@ cp .env.example .env
 
 Set values:
 - `DATABASE_URL` (recommended PostgreSQL URL)
-- `OPENAI_API_KEY` (optional for LLM-enhanced chat)
+- `GEMINI_API_KEY` (optional for LLM-enhanced chat)
+- `GEMINI_MODEL` (optional, default: `gemini-1.5-flash`)
 
 ### 3) Initialize database + seed sample records
 ```bash
